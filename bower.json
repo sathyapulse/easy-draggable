@@ -1,0 +1,10 @@
+{
+  "name": "easy-draggable",
+  "version": "0.0.1",
+  "homepage": "https://github.com/sathyapulse/easy-draggable",
+  "authors": [
+    "(Sathiyamoorthy Venkateasan <sathyapulse@gmail.com>)"
+  ],
+  "description": "Pure Angular js drag and drop plugin with touch support",
+  "license": "MIT"
+}
