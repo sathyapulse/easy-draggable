@@ -231,7 +231,8 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 
 				if(scroll) {
 					if(scrollElement) {
-						var boundary = 50;
+                                            var ua = navigator.userAgent,
+                                            boundary = (ua.match(/iPad/i)) ? 150 : 80;
 
 						if(_mx < scrollOffset.right && _mx > scrollOffset.left && _my < scrollOffset.bottom && _my > scrollOffset.top) {
 							
@@ -259,6 +260,7 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 									angular.element(document.querySelector('#' + scrollElement))[0].scrollTop = scrollPosition + edgeCrossed;
 
 								}
+                                                                
 
 							}	
 							else {
