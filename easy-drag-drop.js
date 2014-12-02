@@ -101,14 +101,6 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 				cursor: 'move'
 			});
 
-			if(scroll) {
-				if(scrollElement) {
-					scrollOffset = easyDraggableUtils.getOffset(angular.element(document.querySelector('#' + scrollElement))[0]);
-					midScrollY = (scrollOffset.top + scrollOffset.bottom) / 2;
-					maxScrollY = angular.element(document.querySelector('#' + scrollElement))[0].scrollHeight - angular.element(document.querySelector('#' + scrollElement))[0].clientHeight;
-				}
-			}
-
 			var initialize = function () {
 				element.attr('draggable', 'false'); // prevent native drag
 				toggleListeners(true);
@@ -231,8 +223,13 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 
 				if(scroll) {
 					if(scrollElement) {
-                                            var ua = navigator.userAgent,
-                                            boundary = (ua.match(/iPad/i)) ? 150 : 80;
+                        var ua = navigator.userAgent,
+                        boundary = (ua.match(/iPad/i)) ? 150 : 80;
+                        if (typeof scrollOffset !== 'object') {
+	                        scrollOffset = easyDraggableUtils.getOffset(angular.element(document.querySelector('#' + scrollElement))[0]);
+	                        midScrollY = (scrollOffset.top + scrollOffset.bottom) / 2;
+	    					maxScrollY = angular.element(document.querySelector('#' + scrollElement))[0].scrollHeight - angular.element(document.querySelector('#' + scrollElement))[0].clientHeight;
+                        }
 
 						if(_mx < scrollOffset.right && _mx > scrollOffset.left && _my < scrollOffset.bottom && _my > scrollOffset.top) {
 							
