@@ -42,6 +42,39 @@ angular.module("easyDraggable").factory('easyDraggableUtils', [function(){
 
 		scrollLeft: function() {
 			return (window.pageXOffset !== undefined) ? window.pageXOffset : (document.documentElement || document.body.parentNode || document.body).scrollLeft;
+		},
+
+		/**
+		 * Method returns current page scroll values as array (X and Y axis).
+		 * @return {Array} Returns array with two values [ scrollX, scrollY ].
+		 * @public
+		 * @function
+		 * @name REDIPS.drag#getScrollPosition
+		 */
+		getScrollPosition: function () {
+			// define local scroll position variables
+			var scrollX, scrollY;
+			// Netscape compliant
+			if (typeof(window.pageYOffset) === 'number') {
+				scrollX = window.pageXOffset;
+				scrollY = window.pageYOffset;
+			}
+			// DOM compliant
+			else if (document.body && (document.body.scrollLeft || document.body.scrollTop)) {
+				scrollX = document.body.scrollLeft;
+				scrollY = document.body.scrollTop;
+			}
+			// IE6 standards compliant mode
+			else if (document.documentElement && (document.documentElement.scrollLeft || document.documentElement.scrollTop)) {
+				scrollX = document.documentElement.scrollLeft;
+				scrollY = document.documentElement.scrollTop;
+			}
+			// needed for IE6 (when vertical scroll bar was on the top)
+			else {
+				scrollX = scrollY = 0;
+			}
+			// return scroll positions
+			return [ scrollX, scrollY ];
 		}
 
 	};
@@ -60,7 +93,8 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 			var offset, 
 				_centerAnchor=false, 
 				_mx, _my, 
-				_tx, _ty, 
+				_tx, _ty,
+				_cx, _cy, 
 				_mrx, _mry, 
 				scrollOffset, 
 				midScrollY, 
@@ -220,24 +254,33 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 				_mx = (evt.pageX || evt.changedTouches[0].pageX);
 				_my = (evt.pageY || evt.changedTouches[0].pageY);
 
+				_cx = (evt.clientX || evt.changedTouches[0].clientX);
+				_cy = (evt.clientY || evt.changedTouches[0].clientY);
+
+
 
 				if(scroll) {
+					var ua = navigator.userAgent,
+                    boundary = (ua.match(/iPad/i)) ? 150 : 80;
+
+					var dragOffset = easyDraggableUtils.getOffset(dragElement[0]);
+					var dragHeight = easyDraggableUtils.outerHeight(dragElement[0]);
+
+					var dragMarigin = [_cy - dragOffset.top, dragOffset.right - _cx, dragOffset.bottom - _cy, _cx - dragOffset.left];
+					
+					var scrollData = {};
+					scrollData.width  = document.documentElement.scrollWidth;
+					scrollData.height = document.documentElement.scrollHeight;
+
 					if(scrollElement) {
-                        var ua = navigator.userAgent,
-                        boundary = (ua.match(/iPad/i)) ? 150 : 80;
+						$scorllElemObj = angular.element(document.querySelector(scrollElement));                        
                         if (typeof scrollOffset !== 'object') {
-	                        scrollOffset = easyDraggableUtils.getOffset(angular.element(document.querySelector('#' + scrollElement))[0]);
+	                        scrollOffset = easyDraggableUtils.getOffset($scorllElemObj[0]);
 	                        midScrollY = (scrollOffset.top + scrollOffset.bottom) / 2;
-	    					maxScrollY = angular.element(document.querySelector('#' + scrollElement))[0].scrollHeight - angular.element(document.querySelector('#' + scrollElement))[0].clientHeight;
+	    					maxScrollY = $scorllElemObj[0].scrollHeight - $scorllElemObj[0].clientHeight;
                         }
 
-						if(_mx < scrollOffset.right && _mx > scrollOffset.left && _my < scrollOffset.bottom && _my > scrollOffset.top) {
-							
-							var dragOffset = easyDraggableUtils.getOffset(dragElement[0]);
-
-							var dragHeight = easyDraggableUtils.outerHeight(dragElement[0]);
-
-							var dragMarigin = [_my - dragOffset.top, dragOffset.right - _mx, dragOffset.bottom - _my, _mx - dragOffset.left];
+						if(_mx < scrollOffset.right && _mx > scrollOffset.left && _my < scrollOffset.bottom && _my > scrollOffset.top) {							
 
 							var edgeCrossed = boundary - (midScrollY > _my ? _my - dragMarigin[0] - scrollOffset.top : scrollOffset.bottom - _my - dragMarigin[2] - dragHeight);
 
@@ -247,28 +290,48 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 									edgeCrossed = boundary;
 								}
 
-
 								edgeCrossed *= _my < midScrollY ? -1 : 1;
 
-
-								var scrollPosition = angular.element(document.querySelector('#' + scrollElement))[0].scrollTop;
+								var scrollPosition = $scorllElemObj[0].scrollTop;
 								if((edgeCrossed < 0 && scrollPosition > 0) || (edgeCrossed > 0 && scrollPosition < maxScrollY)) {
-
-									angular.element(document.querySelector('#' + scrollElement))[0].scrollTop = scrollPosition + edgeCrossed;
-
+									$scorllElemObj[0].scrollTop = scrollPosition + edgeCrossed;
 								}
-                                                                
-
 							}	
 							else {
 								edgeCrossed = 0;
 							}	
 						}
-	
 					}
 					else {
-						//Needs to be refactored
-						window.scrollTop = _my;
+
+						if (Math.abs(window.orientation) === 90) { 
+							screenHeight = screen.width;
+						}
+						else {
+							screenHeight = screen.height;
+						}
+
+						boundary += 30;
+						var edgeCrossed = boundary - (screenHeight / 2 > _cy ? _cy - dragMarigin[0] - dragHeight : screenHeight - _cy - dragMarigin[2] - dragHeight);
+						if (edgeCrossed > 0) {
+							if (edgeCrossed > boundary) {
+								edgeCrossed = boundary;
+							}
+							// get vertical window scroll position
+							scrollPosition = easyDraggableUtils.getScrollPosition()[1];
+							// set scroll direction
+							edgeCrossed *= _cy < screenHeight / 2 ? -1 : 1;
+							// if page bound is crossed and this two cases aren't met:
+							// 1) scrollbar is on the page top and user wants to scroll up
+							// 2) scrollbar is on the page bottom and user wants to scroll down
+							if (!((edgeCrossed < 0 && scrollPosition <= 0) || (edgeCrossed > 0 && scrollPosition >= (scrollData.height - screenHeight)))) {
+								window.scrollBy(0, edgeCrossed);
+							}
+						} 
+						else {
+							edgeCrossed = 0;
+						}
+
 					}
 				}
 
