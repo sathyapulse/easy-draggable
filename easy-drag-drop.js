@@ -211,7 +211,7 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 			var onLongPress = function(evt) {
 				if(! _dragEnabled)
 					return;
-				
+
 				evt.preventDefault();
 
 				var windowTop = easyDraggableUtils.scrollTop();
@@ -241,6 +241,7 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 					dragElement: dragElement,
 					data: _data
 				});
+				evt.stopPropagation();
 
 			};
 
@@ -371,6 +372,7 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 
 				ngDocument.off(_moveEvents, onMove);
 				ngDocument.off(_releaseEvents, onRelease);
+				evt.stopPropagation();
 
 			};
 
