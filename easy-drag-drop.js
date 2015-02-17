@@ -107,6 +107,7 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 			var clonedElement = null;
 
 			var scroll = (attrs.scroll == 'true') ? true : false;
+			var footerHeight = attrs.footerHeight;
 			var scrollElement = (attrs.scrollElement) ? attrs.scrollElement : undefined;
 
 			var ngDocument = angular.element(document);
@@ -313,6 +314,7 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 						}
 
 						boundary += 30;
+						screenHeight = screenHeight - footerHeight;
 						var edgeCrossed = boundary - (screenHeight / 2 > _cy ? _cy - dragMarigin[0] - dragHeight : screenHeight - _cy - dragMarigin[2] - dragHeight);
 						if (edgeCrossed > 0) {
 							if (edgeCrossed > boundary) {
