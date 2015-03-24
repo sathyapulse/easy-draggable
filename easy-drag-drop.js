@@ -265,7 +265,6 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 
         evt.preventDefault();
 
-
         _mx = (evt.pageX || evt.changedTouches[0].pageX);
         _my = (evt.pageY || evt.changedTouches[0].pageY);
 
@@ -277,7 +276,6 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
         if(scroll) {
           var ua = navigator.userAgent,
             boundary = (ua.match(/iPad/i)) ? 150 : 80;
-
           var dragOffset = easyDraggableUtils.getOffset(dragElement[0]);
           var dragHeight = easyDraggableUtils.outerHeight(dragElement[0]);
 
@@ -323,7 +321,9 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
             }
 
             boundary += 30;
-            screenHeight = screenHeight - footerHeight;
+            screenHeight = screenHeight - (footerHeight);
+            var macCheck = (ua.match(/Mac/i)) ? true : false;
+            screenHeight = macCheck ? screenHeight - 70 : screenHeight;
             var edgeCrossed = boundary - (screenHeight / 2 > _cy ? _cy - dragMarigin[0] - dragHeight : screenHeight - _cy - dragMarigin[2] - dragHeight);
             if(edgeCrossed > 0) {
               if(edgeCrossed > boundary) {
