@@ -86,8 +86,12 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
     restrict: 'A',
     link: function(scope, element, attrs) {
       scope.value = attrs.easyDraggable;
-      var clone = 'true';
-      var revert = true;
+      var clone = 'true',
+        revert = true,
+        initialX = 0,
+        initialY = 0,
+        mRegisterX = 0,
+        mRegisterY = 0;
 
       var offset,
         _centerAnchor = false,
@@ -215,11 +219,12 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 
         evt.preventDefault();
 
-        var windowTop = easyDraggableUtils.scrollTop();
-        var windowLeft = easyDraggableUtils.scrollLeft();
+        if(evt.touches && evt.touches.length > 1) {
+          return;
+        }
 
-        _mx = (evt.pageX || evt.changedTouches[0].pageX) - windowLeft;
-        _my = (evt.pageY || evt.changedTouches[0].pageY) - windowTop;
+        _mx = (evt.pageX) ? evt.pageX : (evt.changedTouches) ? evt.changedTouches[0].pageX : 0;
+        _my = (evt.pageY) ? evt.pageY : (evt.changedTouches) ? evt.changedTouches[0].pageY : 0;
 
 
         if(clone == 'true') {
@@ -230,10 +235,35 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
           dragElement = element;
         }
 
-        moveElement(_mx, _my);
+        initialX = element[0].offsetLeft;
+        initialY = element[0].offsetTop;
+
+
+        var moveX = _mx - element[0].getBoundingClientRect().left;
+        var moveY = _my - element[0].getBoundingClientRect().top;
+        
+        mRegisterX = moveX;
+        mRegisterY = moveY;
+
+        moveX += element[0].offsetLeft;
+        moveY += element[0].offsetTop;
+
+        moveX -= mRegisterX;
+        moveY -= mRegisterY;
+
+        moveElement(moveX, moveY);
+
+        var windowTop = easyDraggableUtils.scrollTop();
+        var windowLeft = easyDraggableUtils.scrollLeft();
+
+        _mx -= windowLeft;
+        _my -= windowTop;
 
         ngDocument.on(_moveEvents, onMove);
         ngDocument.on(_releaseEvents, onRelease);
+
+        //Class added to remove highlighting when start dragging
+        element.addClass('easy-drag-started');
 
         $rootScope.$broadcast('draggable:start', {
           x: _mx,
@@ -265,94 +295,80 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 
         evt.preventDefault();
 
-        _mx = (evt.pageX || evt.changedTouches[0].pageX);
-        _my = (evt.pageY || evt.changedTouches[0].pageY);
 
-        _cx = (evt.clientX || evt.changedTouches[0].clientX);
-        _cy = (evt.clientY || evt.changedTouches[0].clientY);
+        _mx = (evt.pageX) ? evt.pageX : (evt.changedTouches) ? evt.changedTouches[0].pageX : 0;
+        _my = (evt.pageY) ? evt.pageY : (evt.changedTouches) ? evt.changedTouches[0].pageY : 0;
+
+        var ngScrollElement = angular.element(document.querySelector(scrollElement));
+
+        var scrollLimit = ngScrollElement[0].scrollHeight - ngScrollElement[0].clientHeight;
+
+        var scrollElementOffset = ngScrollElement[0].getBoundingClientRect();
+
+        var scrollElementTop = scrollElementOffset.top;
+        var scrollElementBottom = scrollElementOffset.bottom;
+        var scrollElementLeft = scrollElementOffset.left;
+        var scrollElementRight = scrollElementOffset.right;
 
 
+        _mx = (scrollElementLeft > _mx) ? scrollElementLeft : _mx;
+        _mx = (scrollElementRight < _mx) ? scrollElementRight : _mx;
 
-        if(scroll) {
-          var ua = navigator.userAgent,
-            boundary = (ua.match(/iPad/i)) ? 150 : 80;
-          var dragOffset = easyDraggableUtils.getOffset(dragElement[0]);
-          var dragHeight = easyDraggableUtils.outerHeight(dragElement[0]);
+        _my = (scrollElementTop > _my) ? scrollElementTop : _my;
+        _my = (scrollElementBottom < _my) ? scrollElementBottom : _my;
 
-          var dragMarigin = [_cy - dragOffset.top, dragOffset.right - _cx, dragOffset.bottom - _cy, _cx - dragOffset.left];
 
-          var scrollData = {};
-          scrollData.width = document.documentElement.scrollWidth;
-          scrollData.height = document.documentElement.scrollHeight;
+        if(scroll && scrollElement) {
 
-          if(scrollElement) {
-            $scorllElemObj = angular.element(document.querySelector(scrollElement));
-            if(typeof scrollOffset !== 'object') {
-              scrollOffset = easyDraggableUtils.getOffset($scorllElemObj[0]);
-              midScrollY = (scrollOffset.top + scrollOffset.bottom) / 2;
-              maxScrollY = $scorllElemObj[0].scrollHeight - $scorllElemObj[0].clientHeight;
-            }
 
-            if(_mx < scrollOffset.right && _mx > scrollOffset.left && _my < scrollOffset.bottom && _my > scrollOffset.top) {
+          var dragElementBottom = dragElement[0].getBoundingClientRect().bottom;
+          var dragElementTop = dragElement[0].getBoundingClientRect().top;
 
-              var edgeCrossed = boundary - (midScrollY > _my ? _my - dragMarigin[0] - scrollOffset.top : scrollOffset.bottom - _my - dragMarigin[2] - dragHeight);
+          if(dragElementBottom > scrollElementBottom) {
+            var scrollPosition = dragElementBottom - scrollElementBottom;
 
-              if(edgeCrossed > 0) {
+            scrollPosition = ngScrollElement[0].scrollTop + scrollPosition + 15;
 
-                if(edgeCrossed > boundary) {
-                  edgeCrossed = boundary;
-                }
+            scrollPosition = Math.floor(scrollPosition);
 
-                edgeCrossed *= _my < midScrollY ? -1 : 1;
-
-                var scrollPosition = $scorllElemObj[0].scrollTop;
-                if((edgeCrossed < 0 && scrollPosition > 0) || (edgeCrossed > 0 && scrollPosition < maxScrollY)) {
-                  $scorllElemObj[0].scrollTop = scrollPosition + edgeCrossed;
-                }
-              } else {
-                edgeCrossed = 0;
-              }
-            }
-          } else {
-            if(Math.abs(window.orientation) === 90) {
-              screenHeight = screen.width;
-            } else {
-              screenHeight = screen.height;
-            }
-
-            boundary += 30;
-            screenHeight = screenHeight - (footerHeight);
-            var macCheck = (ua.match(/Mac/i)) ? true : false;
-            screenHeight = macCheck ? screenHeight - 70 : screenHeight;
-            var edgeCrossed = boundary - (screenHeight / 2 > _cy ? _cy - dragMarigin[0] - dragHeight : screenHeight - _cy - dragMarigin[2] - dragHeight);
-            if(edgeCrossed > 0) {
-              if(edgeCrossed > boundary) {
-                edgeCrossed = boundary;
-              }
-              // get vertical window scroll position
-              scrollPosition = easyDraggableUtils.getScrollPosition()[1];
-              // set scroll direction
-              edgeCrossed *= _cy < screenHeight / 2 ? -1 : 1;
-              // if page bound is crossed and this two cases aren't met:
-              // 1) scrollbar is on the page top and user wants to scroll up
-              // 2) scrollbar is on the page bottom and user wants to scroll down
-              if(!((edgeCrossed < 0 && scrollPosition <= 0) || (edgeCrossed > 0 && scrollPosition >= (scrollData.height - screenHeight)))) {
-                window.scrollBy(0, edgeCrossed);
-              }
-            } else {
-              edgeCrossed = 0;
+            if(scrollPosition < scrollLimit) {
+              ngScrollElement[0].scrollTop = scrollPosition;
             }
 
           }
+
+          if(scrollElementTop > dragElementTop) {
+
+            var scrollPosition = scrollElementTop - dragElementTop;
+
+            if(ngScrollElement[0].scrollTop) {
+
+              scrollPosition = ngScrollElement[0].scrollTop - scrollPosition;
+
+              ngScrollElement[0].scrollTop = scrollPosition;
+
+            }
+
+          }
+
         }
+
+        var moveX = _mx - element[0].getBoundingClientRect().left;
+        var moveY = _my - element[0].getBoundingClientRect().top;
+
+        moveX += element[0].offsetLeft;
+        moveY += element[0].offsetTop;
+
+        moveX -= mRegisterX;
+        moveY -= mRegisterY;
+
+        moveElement(moveX, moveY);
 
         var windowTop = easyDraggableUtils.scrollTop();
         var windowLeft = easyDraggableUtils.scrollLeft();
 
         _mx -= windowLeft;
         _my -= windowTop;
-
-        moveElement(_mx, _my);
 
         $rootScope.$broadcast('draggable:move', {
           x: _mx,
@@ -366,13 +382,31 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 
       };
 
+      var onDragComplete = function(evt, dragElement) {
+
+          dragElement.remove();
+
+        if(!onDragSuccessCallback)
+          return;
+
+        scope.$apply(function() {
+          onDragSuccessCallback(scope, {
+            $data: _data,
+              $event: evt
+            });
+        });
+      };
+
       var onRelease = function(evt) {
 
         if(!_dragEnabled)
           return;
 
         evt.preventDefault();
-
+        
+        //Class added to remove highlighting when start dragging
+        element.removeClass('easy-drag-started');
+        
         $rootScope.$broadcast('draggable:end', {
           x: _mx,
           y: _my,
@@ -384,7 +418,7 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
           callback: onDragComplete
         });
 
-        resetElement();
+          resetElement();
 
         ngDocument.off(_moveEvents, onMove);
         ngDocument.off(_releaseEvents, onRelease);
@@ -402,57 +436,49 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
           }
       };
 
-      var onDragComplete = function(evt) {
-
-        if(!onDragSuccessCallback)
-          return;
-
-        scope.$apply(function() {
-          onDragSuccessCallback(scope, {
-            $data: _data,
-            $event: evt
-          });
-        });
-      };
-
       var resetElement = function() {
-        var moveElement;
+        
+
+        dragElement.removeClass('easy-dragging');
+
+        dragElement.css({
+          'transition': 'all 0.3s linear',
+          '-webkit-transition': 'all 0.3s linear',
+          '-ms-transition': 'all 0.3s linear',
+          '-moz-transition': 'all 0.3s linear',
+          'left': initialX + 'px',
+          'top': initialY + 'px'
+        });
 
         if(clone == 'true') {
-          moveElement = clonedElement;
-          clonedElement.remove();
-        } else {
-          moveElement = element;
-          element.removeClass('easy-dragging');
-        }
+            setTimeout(function(){
+                if(clone == 'true') {
+                    dragElement.remove();
+                }
+                else {
+                    dragElement.css({
+                        'position': '',
+                        'z-index': ''
+                    });
+                }
 
-        moveElement.css({
-          'left': '',
-          'top': '',
-          'position': '',
-          'z-index': '',
-          'margin': ''
-        });
+            }, 300);
+
+        }
 
       };
 
       var moveElement = function(x, y) {
-        var moveElement;
 
-        if(clone == 'true') {
-          clonedElement.addClass('easy-dragging');
-          moveElement = clonedElement;
-        } else {
-          element.addClass('easy-dragging');
-          moveElement = element;
-        }
 
-        moveElement.css({
+        dragElement.addClass('easy-dragging');
+
+        dragElement.css({
           'left': x + 'px',
           'top': y + 'px',
-          'position': 'fixed',
+          'position': 'absolute',
           'z-index': 99999,
-          'margin': '0'
+          'width': '100%'
         });
       };
 
@@ -526,10 +552,13 @@ angular.module("easyDraggable").directive('easyDroppable', ['$parse', '$timeout'
         if(!_dropEnabled || (element.attr('easy-droppable') === 'false'))
           return;
 
-        if(isTouching(dragObj)) {
+        var isHitting = isTouching(dragObj);
+
+        if(isHitting) {
+
           // call the ngDraggable element callback
           if(dragObj.callback) {
-            dragObj.callback(evt);
+            dragObj.callback(evt, dragObj.dragElement);
           }
 
           var data = {
@@ -546,6 +575,7 @@ angular.module("easyDraggable").directive('easyDroppable', ['$parse', '$timeout'
 
 
         }
+
         updateDragStyles(false, dragObj.element);
       };
 
@@ -560,7 +590,8 @@ angular.module("easyDraggable").directive('easyDroppable', ['$parse', '$timeout'
         if(touching) {
           element.addClass('easy-drag-enter');
           dragElement.addClass('easy-drag-over');
-        } else {
+        }
+        else {
           element.removeClass('easy-drag-enter');
           dragElement.removeClass('easy-drag-over');
         }
