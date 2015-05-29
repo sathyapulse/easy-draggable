@@ -329,7 +329,7 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 
             scrollPosition = ngScrollElement[0].scrollTop + scrollPosition + 15;
 
-            scrollPosition = Math.floor(scrollPosition);
+            scrollPosition = Math.ceil(scrollPosition);
 
             if(scrollPosition < scrollLimit) {
               ngScrollElement[0].scrollTop = scrollPosition;
