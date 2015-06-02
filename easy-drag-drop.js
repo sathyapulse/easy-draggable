@@ -226,6 +226,9 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
         _mx = (evt.pageX) ? evt.pageX : (evt.changedTouches) ? evt.changedTouches[0].pageX : 0;
         _my = (evt.pageY) ? evt.pageY : (evt.changedTouches) ? evt.changedTouches[0].pageY : 0;
 
+        _cx = (evt.clientX) ? evt.clientX : (evt.changedTouches) ? evt.changedTouches[0].clientX : 0;
+        _cy = (evt.clientY) ? evt.clientY : (evt.changedTouches) ? evt.changedTouches[0].clientY : 0;
+
 
         if(clone == 'true') {
           clonedElement = element.clone();
@@ -239,8 +242,8 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
         initialY = element[0].offsetTop;
 
 
-        var moveX = _mx - element[0].getBoundingClientRect().left;
-        var moveY = _my - element[0].getBoundingClientRect().top;
+        var moveX = _cx - element[0].getBoundingClientRect().left;
+        var moveY = _cy - element[0].getBoundingClientRect().top;
         
         mRegisterX = moveX;
         mRegisterY = moveY;
@@ -299,6 +302,9 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
         _mx = (evt.pageX) ? evt.pageX : (evt.changedTouches) ? evt.changedTouches[0].pageX : 0;
         _my = (evt.pageY) ? evt.pageY : (evt.changedTouches) ? evt.changedTouches[0].pageY : 0;
 
+        _cx = (evt.clientX) ? evt.clientX : (evt.changedTouches) ? evt.changedTouches[0].clientX : 0;
+        _cy = (evt.clientY) ? evt.clientY : (evt.changedTouches) ? evt.changedTouches[0].clientY : 0;
+
         var ngScrollElement = angular.element(document.querySelector(scrollElement));
 
         var scrollLimit = ngScrollElement[0].scrollHeight - ngScrollElement[0].clientHeight;
@@ -311,11 +317,11 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
         var scrollElementRight = scrollElementOffset.right;
 
 
-        _mx = (scrollElementLeft > _mx) ? scrollElementLeft : _mx;
-        _mx = (scrollElementRight < _mx) ? scrollElementRight : _mx;
+        _cx = (scrollElementLeft > _cx) ? scrollElementLeft : _cx;
+        _cx = (scrollElementRight < _cx) ? scrollElementRight : _cx;
 
-        _my = (scrollElementTop > _my) ? scrollElementTop : _my;
-        _my = (scrollElementBottom < _my) ? scrollElementBottom : _my;
+        _cy = (scrollElementTop > _cy) ? scrollElementTop : _cy;
+        _cy = (scrollElementBottom < _cy) ? scrollElementBottom : _cy;
 
 
         if(scroll && scrollElement) {
@@ -353,8 +359,8 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 
         }
 
-        var moveX = _mx - element[0].getBoundingClientRect().left;
-        var moveY = _my - element[0].getBoundingClientRect().top;
+        var moveX = _cx - element[0].getBoundingClientRect().left;
+        var moveY = _cy - element[0].getBoundingClientRect().top;
 
         moveX += element[0].offsetLeft;
         moveY += element[0].offsetTop;
