@@ -36,11 +36,11 @@ angular.module("easyDraggable").factory('easyDraggableUtils', [function() {
     },
 
     scrollTop: function() {
-      return(window.pageYOffset !== undefined) ? window.pageYOffset : (document.documentElement || document.body.parentNode || document.body).scrollTop;
+      return (window.pageYOffset !== undefined) ? window.pageYOffset : (document.documentElement || document.body.parentNode || document.body).scrollTop;
     },
 
     scrollLeft: function() {
-      return(window.pageXOffset !== undefined) ? window.pageXOffset : (document.documentElement || document.body.parentNode || document.body).scrollLeft;
+      return (window.pageXOffset !== undefined) ? window.pageXOffset : (document.documentElement || document.body.parentNode || document.body).scrollLeft;
     },
 
     /**
@@ -54,17 +54,17 @@ angular.module("easyDraggable").factory('easyDraggableUtils', [function() {
       // define local scroll position variables
       var scrollX, scrollY;
       // Netscape compliant
-      if(typeof(window.pageYOffset) === 'number') {
+      if (typeof(window.pageYOffset) === 'number') {
         scrollX = window.pageXOffset;
         scrollY = window.pageYOffset;
       }
       // DOM compliant
-      else if(document.body && (document.body.scrollLeft || document.body.scrollTop)) {
+      else if (document.body && (document.body.scrollLeft || document.body.scrollTop)) {
         scrollX = document.body.scrollLeft;
         scrollY = document.body.scrollTop;
       }
       // IE6 standards compliant mode
-      else if(document.documentElement && (document.documentElement.scrollLeft || document.documentElement.scrollTop)) {
+      else if (document.documentElement && (document.documentElement.scrollLeft || document.documentElement.scrollTop)) {
         scrollX = document.documentElement.scrollLeft;
         scrollY = document.documentElement.scrollTop;
       }
@@ -81,7 +81,7 @@ angular.module("easyDraggable").factory('easyDraggableUtils', [function() {
   return svc;
 }]);
 
-angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$parse', 'easyDraggableUtils', function($rootScope, $parse, easyDraggableUtils) {
+angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$parse', 'easyDraggableUtils', '$timeout', function($rootScope, $parse, easyDraggableUtils, $timeout) {
   return {
     restrict: 'A',
     link: function(scope, element, attrs) {
@@ -90,6 +90,7 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
         revert = true,
         initialX = 0,
         initialY = 0,
+        initialWidth = '',
         mRegisterX = 0,
         mRegisterY = 0;
 
@@ -110,7 +111,8 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
       var clonedElement = null;
 
       var scroll = (attrs.scroll == 'true') ? true : false;
-      var footerHeight = attrs.footerHeight;
+      clone = (attrs.clone == 'false') ? 'false' : 'true';
+
       var scrollElement = (attrs.scrollElement) ? attrs.scrollElement : undefined;
 
       var ngDocument = angular.element(document);
@@ -120,7 +122,7 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
       var id = element.attr("id");
 
       //Sets ID for the element if ID doesn't exists
-      if(!id) {
+      if (!id) {
         id = easyDraggableUtils.newUuid();
         element.attr("id", id);
       }
@@ -133,9 +135,10 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 
       var _pressTimer = null;
 
-        var onDragStartCallback = $parse(attrs.whenDragStart) || null;
-        var onDragStopCallback = $parse(attrs.whenDragStop) || null;
+      var onDragStartCallback = $parse(attrs.whenDragStart) || null;
+      var onDragStopCallback = $parse(attrs.whenDragStop) || null;
       var onDragSuccessCallback = $parse(attrs.ngDragSuccess) || null;
+      var onDragFailCallback = $parse(attrs.ngDragFail) || null;
 
       element.css({
         cursor: 'move'
@@ -149,7 +152,7 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
       var toggleListeners = function(enable) {
 
         // remove listeners
-        if(!enable)
+        if (!enable)
           return;
         // add listeners.
 
@@ -175,13 +178,13 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 
       var onEnableChange = function(newVal, oldVal) {
         _dragEnabled = (newVal);
-        if(typeof _dragEnabled === 'string') {
+        if (typeof _dragEnabled === 'string') {
           _dragEnabled = ((_dragEnabled == 'true') ? true : false);
         }
       };
 
       var onCenterAnchor = function(newVal, oldVal) {
-        if(angular.isDefined(newVal))
+        if (angular.isDefined(newVal))
           _centerAnchor = (newVal || 'true');
       };
 
@@ -190,10 +193,11 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
        * On touch devices as a small delay so as not to prevent native window scrolling
        */
       var onPress = function(evt) {
-        if(!_dragEnabled)
+
+        if (!_dragEnabled)
           return;
 
-        if(_hasTouch) {
+        if (_hasTouch) {
           cancelPress();
           _pressTimer = setTimeout(function() {
             cancelPress();
@@ -214,12 +218,12 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
       };
 
       var onLongPress = function(evt) {
-        if(!_dragEnabled)
+        if (!_dragEnabled)
           return;
 
         evt.preventDefault();
 
-        if(evt.touches && evt.touches.length > 1) {
+        if (evt.touches && evt.touches.length > 1) {
           return;
         }
 
@@ -230,7 +234,7 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
         _cy = (evt.clientY) ? evt.clientY : (evt.changedTouches) ? evt.changedTouches[0].clientY : 0;
 
 
-        if(clone == 'true') {
+        if (clone == 'true') {
           clonedElement = element.clone();
           element.parent().append(clonedElement);
           dragElement = clonedElement;
@@ -240,11 +244,12 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 
         initialX = element[0].offsetLeft;
         initialY = element[0].offsetTop;
+        initialWidth = element.css('width');
 
 
         var moveX = _cx - element[0].getBoundingClientRect().left;
         var moveY = _cy - element[0].getBoundingClientRect().top;
-        
+
         mRegisterX = moveX;
         mRegisterY = moveY;
 
@@ -266,7 +271,7 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
         ngDocument.on(_releaseEvents, onRelease);
 
         //Class added to remove highlighting when start dragging
-        element.addClass('easy-drag-started');
+        //element.addClass('easy-drag-started');
 
         $rootScope.$broadcast('draggable:start', {
           x: _mx,
@@ -279,21 +284,21 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
         });
         evt.stopPropagation();
 
-          if(onDragStartCallback) {
-              var data = {
-                  name: 'started',
-                  dragEl: element.attr('id')
-              };
-              scope.$apply(function() {
-                  onDragStartCallback(scope, {
-                      data: data
-                  });
-              });
-          }
+        if (onDragStartCallback) {
+          var data = {
+            name: 'started',
+            dragEl: element.attr('id')
+          };
+          scope.$apply(function() {
+            onDragStartCallback(scope, {
+              data: data
+            });
+          });
+        }
       };
 
       var onMove = function(evt) {
-        if(!_dragEnabled)
+        if (!_dragEnabled)
           return;
 
         evt.preventDefault();
@@ -324,30 +329,30 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
         _cy = (scrollElementBottom < _cy) ? scrollElementBottom : _cy;
 
 
-        if(scroll && scrollElement) {
+        if (scroll && scrollElement) {
 
 
           var dragElementBottom = dragElement[0].getBoundingClientRect().bottom;
           var dragElementTop = dragElement[0].getBoundingClientRect().top;
 
-          if(dragElementBottom > scrollElementBottom) {
+          if (dragElementBottom > scrollElementBottom) {
             var scrollPosition = dragElementBottom - scrollElementBottom;
 
             scrollPosition = ngScrollElement[0].scrollTop + scrollPosition + 15;
 
             scrollPosition = Math.ceil(scrollPosition);
 
-            if(scrollPosition < scrollLimit) {
+            if (scrollPosition < scrollLimit) {
               ngScrollElement[0].scrollTop = scrollPosition;
             }
 
           }
 
-          if(scrollElementTop > dragElementTop) {
+          if (scrollElementTop > dragElementTop) {
 
             var scrollPosition = scrollElementTop - dragElementTop;
 
-            if(ngScrollElement[0].scrollTop) {
+            if (ngScrollElement[0].scrollTop) {
 
               scrollPosition = ngScrollElement[0].scrollTop - scrollPosition;
 
@@ -390,29 +395,51 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 
       var onDragComplete = function(evt, dragElement) {
 
-          dragElement.remove();
-
-        if(!onDragSuccessCallback)
+        if (!onDragSuccessCallback)
           return;
 
         scope.$apply(function() {
           onDragSuccessCallback(scope, {
             $data: _data,
-              $event: evt
-            });
+            $event: evt
+          });
         });
+
+        if (clone == 'true') {
+          dragElement.remove();
+        }
+        dragElement.removeClass('iap-drag-animation easy-dragging');
+
+      };
+
+      var onDragInComplete = function(evt, dragElement) {
+        dragElement.addClass('iap-drag-animation');
+        dragElement.css({
+          'left': initialX + 'px',
+          'top': initialY + 'px',
+          'width': initialWidth,
+          'position': '',
+          'z-index': ''
+        });
+
+        if (clone == 'true') {
+          dragElement.remove();
+        }
+
+        dragElement.removeClass('iap-drag-animation easy-dragging');
+
       };
 
       var onRelease = function(evt) {
 
-        if(!_dragEnabled)
+        if (!_dragEnabled)
           return;
 
         evt.preventDefault();
-        
+
         //Class added to remove highlighting when start dragging
         element.removeClass('easy-drag-started');
-        
+
         $rootScope.$broadcast('draggable:end', {
           x: _mx,
           y: _my,
@@ -421,61 +448,46 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
           element: element,
           dragElement: dragElement,
           data: _data,
-          callback: onDragComplete
+          successCallback: onDragComplete,
+          failCallback: onDragInComplete
         });
 
-          resetElement();
+
 
         ngDocument.off(_moveEvents, onMove);
         ngDocument.off(_releaseEvents, onRelease);
         evt.stopPropagation();
-          if(onDragStopCallback) {
-              var data = {
-                  name: 'stopped',
-                  dragEl: element.attr('id')
-              };
-              scope.$apply(function() {
-                  onDragStopCallback(scope, {
-                      data: data
-                  });
-              });
-          }
+        if (onDragStopCallback) {
+          var data = {
+            name: 'stopped',
+            dragEl: element.attr('id')
+          };
+          scope.$apply(function() {
+            onDragStopCallback(scope, {
+              data: data
+            });
+          });
+        }
       };
 
       var resetElement = function() {
-        
 
         dragElement.removeClass('easy-dragging');
 
-        dragElement.css({
-          'transition': 'all 0.3s linear',
-          '-webkit-transition': 'all 0.3s linear',
-          '-ms-transition': 'all 0.3s linear',
-          '-moz-transition': 'all 0.3s linear',
-          'left': initialX + 'px',
-          'top': initialY + 'px'
-        });
+        if (clone == 'true') {
+          dragElement.remove();
 
-        if(clone == 'true') {
-            setTimeout(function(){
-                if(clone == 'true') {
-                    dragElement.remove();
-                }
-                else {
-                    dragElement.css({
-                        'position': '',
-                        'z-index': ''
-                    });
-                }
+        } else {
 
-            }, 300);
-
+          dragElement.css({
+            'position': '',
+            'z-index': ''
+          });
         }
 
       };
 
       var moveElement = function(x, y) {
-
 
         dragElement.addClass('easy-dragging');
 
@@ -506,7 +518,7 @@ angular.module("easyDraggable").directive('easyDroppable', ['$parse', '$timeout'
       var onDropSuccess = $parse(attrs.onDropSuccess) || null; // || function(){};
 
       var id = element.attr("id");
-      if(!id) {
+      if (!id) {
         id = easyDraggableUtils.newUuid();
         element.attr("id", id);
       }
@@ -520,7 +532,7 @@ angular.module("easyDraggable").directive('easyDroppable', ['$parse', '$timeout'
       var toggleListeners = function(enable) {
         // remove listeners
 
-        if(!enable)
+        if (!enable)
           return;
         // add listeners.
         scope.$watch(attrs.easyDroppable, onEnableChange);
@@ -537,40 +549,42 @@ angular.module("easyDraggable").directive('easyDroppable', ['$parse', '$timeout'
 
       var onEnableChange = function(newVal, oldVal) {
         _dropEnabled = (newVal);
-        if(typeof _dropEnabled === 'string') {
+        if (typeof _dropEnabled === 'string') {
           _dropEnabled = ((_dropEnabled == 'true') ? true : false);
         }
       };
 
       var onDragStart = function(evt, dragObj) {
-        if(!_dropEnabled || (element.attr('easy-droppable') === 'false'))
+        if (!_dropEnabled || (element.attr('easy-droppable') === 'false'))
           return;
         isTouching(dragObj);
       };
 
       var onDragMove = function(evt, dragObj) {
-        if(!_dropEnabled || (element.attr('easy-droppable') === 'false'))
+        if (!_dropEnabled || (element.attr('easy-droppable') === 'false'))
           return;
         isTouching(dragObj);
       };
 
       var onDragEnd = function(evt, dragObj) {
-        if(!_dropEnabled || (element.attr('easy-droppable') === 'false'))
+        if (!_dropEnabled || (element.attr('easy-droppable') === 'false'))
           return;
 
         var isHitting = isTouching(dragObj);
 
-        if(isHitting) {
+        if (isHitting) {
 
           // call the ngDraggable element callback
-          if(dragObj.callback) {
-            dragObj.callback(evt, dragObj.dragElement);
+          if (dragObj.successCallback) {
+            dragObj.successCallback(evt, dragObj.dragElement);
           }
 
           var data = {
             name: 'success',
             dropEl: element.attr('id'),
-            dragEl: dragObj.element.attr('id')
+            dragEl: dragObj.element.attr('id'),
+            dragElement: dragObj.dragElement,
+            dropElement: element
           };
 
           scope.$apply(function(scope) {
@@ -580,6 +594,10 @@ angular.module("easyDraggable").directive('easyDroppable', ['$parse', '$timeout'
           });
 
 
+        } else {
+          if (dragObj.failCallback) {
+            dragObj.failCallback(evt, dragObj.dragElement);
+          }
         }
 
         updateDragStyles(false, dragObj.element);
@@ -593,11 +611,10 @@ angular.module("easyDraggable").directive('easyDroppable', ['$parse', '$timeout'
 
       //Updates classes in the DOM
       var updateDragStyles = function(touching, dragElement) {
-        if(touching) {
+        if (touching) {
           element.addClass('easy-drag-enter');
           dragElement.addClass('easy-drag-over');
-        }
-        else {
+        } else {
           element.removeClass('easy-drag-enter');
           dragElement.removeClass('easy-drag-over');
         }
@@ -623,7 +640,7 @@ angular.module("easyDraggable").directive('easyDroppable', ['$parse', '$timeout'
           dpT = dropOffset.top, // Drop top
           dpB = dropOffset.bottom; // Drop bottom
 
-        switch(onDropAction) {
+        switch (onDropAction) {
 
           //When the dragged element exactly fits to the droppable element
           case 'fit':
