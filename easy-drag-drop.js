@@ -227,11 +227,11 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
           return;
         }
 
-        _mx = (evt.pageX) ? evt.pageX : (evt.changedTouches) ? evt.changedTouches[0].pageX : 0;
-        _my = (evt.pageY) ? evt.pageY : (evt.changedTouches) ? evt.changedTouches[0].pageY : 0;
+        _mx = (evt.pageX) ? evt.pageX : (evt.changedTouches) ? evt.changedTouches[0].pageX : evt.originalEvent.changedTouches[0].pageX;
+        _my = (evt.pageY) ? evt.pageY : (evt.changedTouches) ? evt.changedTouches[0].pageY : evt.originalEvent.changedTouches[0].pageY;
 
-        _cx = (evt.clientX) ? evt.clientX : (evt.changedTouches) ? evt.changedTouches[0].clientX : 0;
-        _cy = (evt.clientY) ? evt.clientY : (evt.changedTouches) ? evt.changedTouches[0].clientY : 0;
+        _cx = (evt.clientX) ? evt.clientX : (evt.changedTouches) ? evt.changedTouches[0].clientX : evt.originalEvent.changedTouches[0].pageX;
+        _cy = (evt.clientY) ? evt.clientY : (evt.changedTouches) ? evt.changedTouches[0].clientY : evt.originalEvent.changedTouches[0].pageY;
 
 
         if (clone == 'true') {
@@ -304,11 +304,11 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
         evt.preventDefault();
 
 
-        _mx = (evt.pageX) ? evt.pageX : (evt.changedTouches) ? evt.changedTouches[0].pageX : 0;
-        _my = (evt.pageY) ? evt.pageY : (evt.changedTouches) ? evt.changedTouches[0].pageY : 0;
+        _mx = (evt.pageX) ? evt.pageX : (evt.changedTouches) ? evt.changedTouches[0].pageX : evt.originalEvent.changedTouches[0].pageX;
+        _my = (evt.pageY) ? evt.pageY : (evt.changedTouches) ? evt.changedTouches[0].pageY : evt.originalEvent.changedTouches[0].pageY;
 
-        _cx = (evt.clientX) ? evt.clientX : (evt.changedTouches) ? evt.changedTouches[0].clientX : 0;
-        _cy = (evt.clientY) ? evt.clientY : (evt.changedTouches) ? evt.changedTouches[0].clientY : 0;
+        _cx = (evt.clientX) ? evt.clientX : (evt.changedTouches) ? evt.changedTouches[0].clientX : evt.originalEvent.changedTouches[0].pageX;
+        _cy = (evt.clientY) ? evt.clientY : (evt.changedTouches) ? evt.changedTouches[0].clientY : evt.originalEvent.changedTouches[0].pageY;
 
         var ngScrollElement = angular.element(document.querySelector(scrollElement));
 
