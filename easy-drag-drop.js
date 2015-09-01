@@ -287,7 +287,8 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
         if (onDragStartCallback) {
           var data = {
             name: 'started',
-            dragEl: element.attr('id')
+            dragEl: element.attr('id'),
+            dragElement: element
           };
           scope.$apply(function() {
             onDragStartCallback(scope, {
@@ -417,7 +418,6 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
         dragElement.css({
           'left': initialX + 'px',
           'top': initialY + 'px',
-          'width': initialWidth,
           'position': '',
           'z-index': ''
         });
@@ -460,7 +460,8 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
         if (onDragStopCallback) {
           var data = {
             name: 'stopped',
-            dragEl: element.attr('id')
+            dragEl: element.attr('id'),
+            dragElement: element
           };
           scope.$apply(function() {
             onDragStopCallback(scope, {
@@ -563,16 +564,14 @@ angular.module("easyDraggable").directive('easyDroppable', ['$parse', '$timeout'
       var onDragMove = function(evt, dragObj) {
         if (!_dropEnabled || (element.attr('easy-droppable') === 'false'))
           return;
-        isTouching(dragObj);
+        element.isTouching = isTouching(dragObj);
       };
 
       var onDragEnd = function(evt, dragObj) {
         if (!_dropEnabled || (element.attr('easy-droppable') === 'false'))
           return;
 
-        var isHitting = isTouching(dragObj);
-
-        if (isHitting) {
+        if (element.isTouching) {
 
           // call the ngDraggable element callback
           if (dragObj.successCallback) {
@@ -599,8 +598,13 @@ angular.module("easyDraggable").directive('easyDroppable', ['$parse', '$timeout'
             dragObj.failCallback(evt, dragObj.dragElement);
           }
         }
+        
+        setTimeout(function(){
+          updateDragStyles(false, dragObj.element);
+        });
+        // Reset isTouching once user stops the dragging.
+        element.isTouching = false;
 
-        updateDragStyles(false, dragObj.element);
       };
 
       var isTouching = function(dragObj) {
