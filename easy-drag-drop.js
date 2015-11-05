@@ -244,7 +244,7 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
 
         initialX = element[0].offsetLeft;
         initialY = element[0].offsetTop;
-        initialWidth = element.css('width');
+        initialWidth = element[0].style.width;
 
 
         var moveX = _cx - element[0].getBoundingClientRect().left;
@@ -419,7 +419,8 @@ angular.module("easyDraggable").directive('easyDraggable', ['$rootScope', '$pars
           'left': initialX + 'px',
           'top': initialY + 'px',
           'position': '',
-          'z-index': ''
+          'z-index': '',
+          'width': initialWidth
         });
 
         if (clone == 'true') {
